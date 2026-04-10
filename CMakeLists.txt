@@ -95,6 +95,10 @@ install(TARGETS RapidOcrOnnx EXPORT RapidOcrOnnx)
 if (OCR_OUTPUT STREQUAL "CLIB") # CLIB
     file(GLOB OCR_INCLUDE ${CMAKE_CURRENT_SOURCE_DIR}/include/*.h)
     install(FILES ${OCR_INCLUDE} DESTINATION include)
+
+    add_executable(test_rec_so test/test_rec_so.cpp)
+    target_link_libraries(test_rec_so RapidOcrOnnx)
+    install(TARGETS test_rec_so RUNTIME DESTINATION bin)
 endif ()
 
 if (OCR_ONNX STREQUAL "CUDA")
