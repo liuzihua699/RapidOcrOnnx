@@ -150,3 +150,7 @@ opencv-static/*
 !/opencv-static/OpenCVWrapperConfig.cmake
 opencv-shared/
 /images/*-result.*
+
+Linux-BIN-CUDA
+
+.vscode/*

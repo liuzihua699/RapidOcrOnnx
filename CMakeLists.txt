@@ -130,3 +130,21 @@ endif ()
 if (OCR_BUILD_CRT STREQUAL "True")
     include(${CMAKE_CURRENT_SOURCE_DIR}/OcrCRTLinkage.cmake)
 endif ()
+
+# bench_rec
+if (OCR_BENCHMARK AND (OCR_OUTPUT STREQUAL "BIN"))
+    add_executable(bench_rec benchmark/bench_rec.cpp
+            src/CrnnNet.cpp
+            src/clipper.cpp
+            src/OcrUtils.cpp)
+    target_link_libraries(bench_rec ${OnnxRuntime_LIBS} ${OpenCV_LIBS})
+    target_compile_definitions(bench_rec PRIVATE __EXEC__)
+
+    if (OCR_ONNX STREQUAL "CUDA")
+        target_compile_definitions(bench_rec PRIVATE __CUDA__)
+    endif ()
+    install(TARGETS bench_rec EXPORT bench_rec
+            ARCHIVE DESTINATION staticlib
+            LIBRARY DESTINATION sharedlib
+            RUNTIME DESTINATION bin)
+endif ()

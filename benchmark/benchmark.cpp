@@ -1,4 +1,7 @@
 #include <cstdio>
+#include <filesystem>
+#include <opencv2/imgcodecs.hpp>
+#include <random>
 #include "main.h"
 #include "version.h"
 #include "OcrLite.h"
@@ -20,6 +23,29 @@ void printHelp(FILE *out, char *argv0) {
     fprintf(out, " ------- Examples -------\n");
     fprintf(out, example1Msg, argv0);
     fprintf(out, example2Msg, argv0);
+}
+
+struct ImageEntry {
+    std::string path;
+    cv::Mat mat;
+};
+std::vector<ImageEntry> loadImagesFromDir(const std::string &imagesDir) {
+    std::vector<ImageEntry> images;
+    std::vector<std::string> extensions = {".jpg", ".jpeg", ".png", ".bmp", ".tiff", ".tif", ".webp"};
+    for (const auto &entry : std::filesystem::directory_iterator(imagesDir)) {
+        if (!entry.is_regular_file()) continue;
+        std::string ext = entry.path().extension().string();
+        std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
+        if (std::find(extensions.begin(), extensions.end(), ext) == extensions.end()) continue;
+        cv::Mat img = cv::imread(entry.path().string(), cv::IMREAD_COLOR);
+        if (img.empty()) {
+            fprintf(stderr, "Warning: failed to load image: %s\n", entry.path().c_str());
+            continue;
+        }
+        images.push_back({entry.path().string(), std::move(img)});
+    }
+    printf("Loaded %zu images from %s\n", images.size(), imagesDir.c_str());
+    return images;
 }
 
 int main(int argc, char **argv) {
@@ -160,6 +186,20 @@ int main(int argc, char **argv) {
         fprintf(stderr, "keys file not found: %s\n", keysPath.c_str());
         return -1;
     }
+
+    // 预载图片
+    std::string imagesDir = "/root/rapid_ocr/images";
+    std::vector<ImageEntry> images = loadImagesFromDir(imagesDir);
+    if (images.empty()) {
+        fprintf(stderr, "No images found in: %s\n", imagesDir.c_str());
+        return -1;
+    }
+
+    // 随机数生成器
+    std::mt19937 rng(std::random_device{}());
+    std::uniform_int_distribution<size_t> dist(0, images.size() - 1);
+
+
     OcrLite ocrLite;
     ocrLite.setNumThread(numThread);
     ocrLite.initLogger(
@@ -182,16 +222,26 @@ int main(int argc, char **argv) {
         printf("Warmup time(%f)\n", result.detectTime);
     }
     printf("=====Start Test Loop=====\n");
-    double allDbTime = 0.0f;
-    double allClsTime = 0.0f;
-    double allRecTime = 0.0f;
-    double allFullTime = 0.0f;
+    // double allDbTime = 0.0f;
+    // double allClsTime = 0.0f;
+    // double allRecTime = 0.0f;
+    // double allFullTime = 0.0f;
     for (int i = 0; i < loopCount; ++i) {
         printf("=====Cycle:%d Take Time(ms)=====\n", i + 1);
-        OcrResult ocrResult = ocrLite.detect(imgDir.c_str(), imgName.c_str(),
+        // OcrResult ocrResult = ocrLite.detect(imgDir.c_str(), imgName.c_str(),
+        //                                      padding, maxSideLen,
+        //                                      boxScoreThresh, boxThresh,
+        //                                      unClipRatio, doAngle, mostAngle);
+
+        size_t idx = dist(rng);
+        // printf("Processing image: %s\n", images[idx].path.c_str());
+        OcrResult ocrResult = ocrLite.detect(images[idx].mat ,
                                              padding, maxSideLen,
                                              boxScoreThresh, boxThresh,
                                              unClipRatio, doAngle, mostAngle);
+        // printf打印ocr结果
+        // printf("ocr_result=%s\n", ocrResult.strRes.c_str());
+
         double dbTime = ocrResult.dbNetTime;
         double clsTime = 0.0f;
         double recTime = 0.0f;
@@ -209,5 +259,6 @@ int main(int argc, char **argv) {
     printf("=====Result:Average Time(ms)=====\n");
     printf("det=%f cls=%f rec=%f full=%f\n", allDbTime / loopCount, allClsTime / loopCount,
            allRecTime / loopCount, allFullTime / loopCount);
+    printf("throughput=%.1f img/s\n", 1000.0 / (allFullTime / loopCount));
     return 0;
 }
