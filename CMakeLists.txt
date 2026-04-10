@@ -84,7 +84,7 @@ if (OCR_OUTPUT STREQUAL "JNI") # JNI
 elseif (OCR_OUTPUT STREQUAL "CLIB") # CLIB
     add_library(RapidOcrOnnx SHARED ${OCR_COMPILE_CODE})
     target_compile_definitions(RapidOcrOnnx PRIVATE __CLIB__)
-    target_link_libraries(RapidOcrOnnx ${OnnxRuntime_LIBS} ${OpenCV_LIBS})
+    target_link_libraries(RapidOcrOnnx ${OnnxRuntime_LIBS} ${OpenCV_LIBS} stdc++)
 elseif (OCR_OUTPUT STREQUAL "BIN") # BIN
     add_executable(RapidOcrOnnx ${OCR_COMPILE_CODE})
     target_compile_definitions(RapidOcrOnnx PRIVATE __EXEC__)
@@ -98,6 +98,7 @@ if (OCR_OUTPUT STREQUAL "CLIB") # CLIB
 
     add_executable(test_rec_so test/test_rec_so.cpp)
     target_link_libraries(test_rec_so RapidOcrOnnx ${OnnxRuntime_LIBS} ${OpenCV_LIBS})
+    target_link_options(test_rec_so PRIVATE -Wl,--allow-shlib-undefined)
     set_target_properties(test_rec_so PROPERTIES
         BUILD_RPATH "$ORIGIN"
         INSTALL_RPATH "$ORIGIN")
