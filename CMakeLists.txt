@@ -98,6 +98,9 @@ if (OCR_OUTPUT STREQUAL "CLIB") # CLIB
 
     add_executable(test_rec_so test/test_rec_so.cpp)
     target_link_libraries(test_rec_so RapidOcrOnnx)
+    set_target_properties(test_rec_so PROPERTIES
+        BUILD_RPATH "$ORIGIN"
+        INSTALL_RPATH "$ORIGIN")
     install(TARGETS test_rec_so RUNTIME DESTINATION bin)
 endif ()
 
