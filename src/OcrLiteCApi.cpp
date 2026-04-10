@@ -11,12 +11,12 @@ typedef struct {
 } OCR_OBJ;
 
 _QM_OCR_API OCR_HANDLE
-OcrInit(const char *szDetModel, const char *szClsModel, const char *szRecModel, const char *szKeyPath, int nThreads) {
+OcrInit(const char *szDetModel, const char *szClsModel, const char *szRecModel, const char *szKeyPath, int nThreads, int gpuIndex) {
 
     OCR_OBJ *pOcrObj = new OCR_OBJ;
     if (pOcrObj) {
         pOcrObj->OcrObj.setNumThread(nThreads);
-
+        pOcrObj->OcrObj.setGpuIndex(gpuIndex);
         pOcrObj->OcrObj.initModels(szDetModel, szClsModel, szRecModel, szKeyPath);
 
         return pOcrObj;

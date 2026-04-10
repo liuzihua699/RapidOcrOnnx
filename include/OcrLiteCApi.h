@@ -68,9 +68,10 @@ typedef struct {
 
 /*
 By default, nThreads should be the number of threads
+gpuIndex >= 0: use GPU with specified index; gpuIndex < 0: use CPU
 */
 _QM_OCR_API OCR_HANDLE
-OcrInit(const char *szDetModel, const char *szClsModel, const char *szRecModel, const char *szKeyPath, int nThreads);
+OcrInit(const char *szDetModel, const char *szClsModel, const char *szRecModel, const char *szKeyPath, int nThreads, int gpuIndex);
 
 _QM_OCR_API OCR_BOOL
 OcrDetect(OCR_HANDLE handle, const char *imgPath, const char *imgName, OCR_PARAM *pParam);
