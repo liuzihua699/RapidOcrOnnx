@@ -1,20 +1,8 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
-#include <vector>
+#include <opencv2/opencv.hpp>
 #include "OcrLiteCApi.h"
-
-static std::vector<uint8_t> readFileBytes(const char *path) {
-    FILE *fp = fopen(path, "rb");
-    if (!fp) return {};
-    fseek(fp, 0, SEEK_END);
-    long sz = ftell(fp);
-    fseek(fp, 0, SEEK_SET);
-    std::vector<uint8_t> buf(sz);
-    fread(buf.data(), 1, sz, fp);
-    fclose(fp);
-    return buf;
-}
 
 int main(int argc, char **argv) {
     if (argc < 6) {
@@ -28,8 +16,8 @@ int main(int argc, char **argv) {
     int gpuIndex  = atoi(argv[4]);
     int loopCount = atoi(argv[5]);
 
-    std::vector<uint8_t> imgData = readFileBytes(imgPath);
-    if (imgData.empty()) {
+    cv::Mat src = cv::imread(imgPath, cv::IMREAD_COLOR);
+    if (src.empty()) {
         fprintf(stderr, "Failed to read image: %s\n", imgPath);
         return 1;
     }
@@ -45,7 +33,7 @@ int main(int argc, char **argv) {
     for (int i = 0; i < 2; ++i) {
         REC_RESULT result;
         memset(&result, 0, sizeof(result));
-        OCR_BOOL ok = OcrRecDetect(handle, imgData.data(), (long)imgData.size(), &result);
+        OCR_BOOL ok = OcrRecDetect(handle, src.data, src.cols, src.rows, src.channels(), &result);
         if (ok) {
             printf("Warmup time(%f) text=%s\n", result.crnnTime, (const char *)result.text);
             OcrRecFreeResult(&result);
@@ -61,7 +49,7 @@ int main(int argc, char **argv) {
         printf("=====Cycle:%d Take Time(ms)=====\n", i + 1);
         REC_RESULT result;
         memset(&result, 0, sizeof(result));
-        OCR_BOOL ok = OcrRecDetect(handle, imgData.data(), (long)imgData.size(), &result);
+        OCR_BOOL ok = OcrRecDetect(handle, src.data, src.cols, src.rows, src.channels(), &result);
         if (ok) {
             printf("rec=%f text=%s\n", result.crnnTime, (const char *)result.text);
             allRecTime += result.crnnTime;
