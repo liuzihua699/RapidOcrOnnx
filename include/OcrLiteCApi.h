@@ -88,6 +88,33 @@ _QM_OCR_API OCR_BOOL OcrGetResult(OCR_HANDLE handle, char *szBuf, int nLen);
 
 _QM_OCR_API void OcrDestroy(OCR_HANDLE handle);
 
+/*
+Rec-only API: only load CrnnNet (recognition model)
+gpuIndex >= 0: use GPU with specified index; gpuIndex < 0: use CPU
+*/
+_QM_OCR_API OCR_HANDLE
+OcrRecInit(const char *szRecModel, const char *szKeyPath, int nThreads, int gpuIndex);
+
+typedef struct {
+    uint8_t *text;
+    unsigned long long textLength;
+    float *charScores;
+    unsigned long long charScoresLength;
+    double crnnTime;
+} REC_RESULT;
+
+/*
+data: raw image file bytes (jpg/png/bmp etc.)
+dataLength: byte length of data
+*/
+_QM_OCR_API OCR_BOOL
+OcrRecDetect(OCR_HANDLE handle, const uint8_t *data, long dataLength, REC_RESULT *recResult);
+
+_QM_OCR_API OCR_BOOL
+OcrRecFreeResult(REC_RESULT *result);
+
+_QM_OCR_API void OcrRecDestroy(OCR_HANDLE handle);
+
 };
 #endif //__OCR_LITE_C_API_H__
 #endif //__cplusplus

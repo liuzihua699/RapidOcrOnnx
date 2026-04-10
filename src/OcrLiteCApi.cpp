@@ -2,6 +2,8 @@
 
 #include "OcrLiteCApi.h"
 #include "OcrLiteImpl.h"
+#include "CrnnNet.h"
+#include <opencv2/opencv.hpp>
 
 extern "C"
 {
@@ -9,6 +11,10 @@ typedef struct {
     OcrLiteImpl OcrObj;
     std::string strRes;
 } OCR_OBJ;
+
+typedef struct {
+    CrnnNet crnnNet;
+} REC_OBJ;
 
 _QM_OCR_API OCR_HANDLE
 OcrInit(const char *szDetModel, const char *szClsModel, const char *szRecModel, const char *szKeyPath, int nThreads, int gpuIndex) {
@@ -191,6 +197,74 @@ _QM_OCR_API void OcrDestroy(OCR_HANDLE handle) {
     OCR_OBJ *pOcrObj = (OCR_OBJ *) handle;
     if (pOcrObj)
         delete pOcrObj;
+}
+
+_QM_OCR_API OCR_HANDLE
+OcrRecInit(const char *szRecModel, const char *szKeyPath, int nThreads, int gpuIndex) {
+    REC_OBJ *pRecObj = new REC_OBJ;
+    if (pRecObj) {
+        pRecObj->crnnNet.setNumThread(nThreads);
+        pRecObj->crnnNet.setGpuIndex(gpuIndex);
+        pRecObj->crnnNet.initModel(szRecModel, szKeyPath);
+        return pRecObj;
+    }
+    return nullptr;
+}
+
+_QM_OCR_API OCR_BOOL
+OcrRecDetect(OCR_HANDLE handle, const uint8_t *data, long dataLength, REC_RESULT *recResult) {
+    REC_OBJ *pRecObj = (REC_OBJ *) handle;
+    if (!pRecObj || !data || dataLength <= 0 || !recResult)
+        return FALSE;
+
+    std::vector<uint8_t> vecData(data, data + dataLength);
+    cv::Mat src = cv::imdecode(vecData, cv::IMREAD_COLOR);
+    if (src.empty())
+        return FALSE;
+
+    std::vector<cv::Mat> partImgs;
+    partImgs.push_back(src);
+
+    std::vector<TextLine> results = pRecObj->crnnNet.getTextLines(partImgs, "/tmp/", "rec");
+    if (results.empty() || results[0].text.empty())
+        return FALSE;
+
+    const TextLine &line = results[0];
+    recResult->crnnTime = line.time;
+
+    auto *text = static_cast<uint8_t *>(calloc(line.text.size() + 1, sizeof(uint8_t)));
+    std::copy(line.text.begin(), line.text.end(), text);
+    text[line.text.size()] = 0;
+    recResult->text = text;
+    recResult->textLength = line.text.size() + 1;
+
+    auto *charScore = static_cast<float *>(calloc(line.charScores.size(), sizeof(float)));
+    std::copy(line.charScores.begin(), line.charScores.end(), charScore);
+    recResult->charScores = charScore;
+    recResult->charScoresLength = line.charScores.size();
+
+    return TRUE;
+}
+
+_QM_OCR_API OCR_BOOL
+OcrRecFreeResult(REC_RESULT *result) {
+    if (!result)
+        return FALSE;
+    if (result->text) {
+        free(result->text);
+        result->text = nullptr;
+    }
+    if (result->charScores) {
+        free(result->charScores);
+        result->charScores = nullptr;
+    }
+    return TRUE;
+}
+
+_QM_OCR_API void OcrRecDestroy(OCR_HANDLE handle) {
+    REC_OBJ *pRecObj = (REC_OBJ *) handle;
+    if (pRecObj)
+        delete pRecObj;
 }
 
 };
