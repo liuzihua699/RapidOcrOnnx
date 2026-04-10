@@ -108,7 +108,7 @@ data: raw image file bytes (jpg/png/bmp etc.)
 dataLength: byte length of data
 */
 _QM_OCR_API OCR_BOOL
-OcrRecDetect(OCR_HANDLE handle, const uint8_t *data, long dataLength, REC_RESULT *recResult);
+OcrRecDetect(OCR_HANDLE handle, const uint8_t *pixelData, int width, int height, int channels, REC_RESULT *recResult);
 
 _QM_OCR_API OCR_BOOL
 OcrRecFreeResult(REC_RESULT *result);

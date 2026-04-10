@@ -212,15 +212,13 @@ OcrRecInit(const char *szRecModel, const char *szKeyPath, int nThreads, int gpuI
 }
 
 _QM_OCR_API OCR_BOOL
-OcrRecDetect(OCR_HANDLE handle, const uint8_t *data, long dataLength, REC_RESULT *recResult) {
+OcrRecDetect(OCR_HANDLE handle, const uint8_t *pixelData, 
+             int width, int height, int channels, REC_RESULT *recResult) {
     REC_OBJ *pRecObj = (REC_OBJ *) handle;
-    if (!pRecObj || !data || dataLength <= 0 || !recResult)
+    if (!pRecObj || !pixelData || width <= 0 || height <= 0 || !recResult)
         return FALSE;
 
-    std::vector<uint8_t> vecData(data, data + dataLength);
-    cv::Mat src = cv::imdecode(vecData, cv::IMREAD_COLOR);
-    if (src.empty())
-        return FALSE;
+    cv::Mat src(height, width, channels == 1 ? CV_8UC1 : CV_8UC3, (void*)pixelData);
 
     std::vector<cv::Mat> partImgs;
     partImgs.push_back(src);
