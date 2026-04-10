@@ -222,10 +222,10 @@ int main(int argc, char **argv) {
         printf("Warmup time(%f)\n", result.detectTime);
     }
     printf("=====Start Test Loop=====\n");
-    // double allDbTime = 0.0f;
-    // double allClsTime = 0.0f;
-    // double allRecTime = 0.0f;
-    // double allFullTime = 0.0f;
+    double allDbTime = 0.0;
+    double allClsTime = 0.0;
+    double allRecTime = 0.0;
+    double allFullTime = 0.0;
     for (int i = 0; i < loopCount; ++i) {
         printf("=====Cycle:%d Take Time(ms)=====\n", i + 1);
         // OcrResult ocrResult = ocrLite.detect(imgDir.c_str(), imgName.c_str(),
